@@ -1,13 +1,13 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 
 namespace Maze;
 class Program
 {
-    private static Map map = new Map(3, 3);
+    private static Map map ;
     private static Action<Vector2>? inputCycle;
 
     private static Vector2 playerPosition = new(1, 1);
+    private static bool didntWin;
 
     #region Game Cycle
 
@@ -15,18 +15,27 @@ class Program
     {
         inputCycle += GameCycle;
 
-        RenderMap();
-
         while (true)
-            CheckInput();
+        {
+            playerPosition.x = 1;
+            playerPosition.y = 1;
+
+            map = new Map(10, 10);
+            RenderMap();
+            
+            didntWin = true;
+
+            while (didntWin)
+                CheckInput();
+
+            Console.ReadKey(true);
+        }
     }
 
     static void GameCycle(Vector2 input)
     {
-        Console.WriteLine("In game loop");
-
         MovePlayer(input);
-
+        didntWin = !CheckForWin();
         RenderMap();
     }
 
@@ -40,9 +49,13 @@ class Program
                 .Key switch
             {
                 ConsoleKey.W => new Vector2(0, -1),
+                ConsoleKey.UpArrow => new Vector2(0, -1),
                 ConsoleKey.A => new Vector2(-1, 0),
+                ConsoleKey.LeftArrow => new Vector2(-1, 0),
                 ConsoleKey.S => new Vector2(0, 1),
+                ConsoleKey.DownArrow => new Vector2(0, 1),
                 ConsoleKey.D => new Vector2(1, 0),
+                ConsoleKey.RightArrow => new Vector2(1, 0),
                 _ => new Vector2()
             };
 
@@ -51,11 +64,15 @@ class Program
 
     static void MovePlayer(Vector2 input)
     {
-        if (map[playerPosition + input] != '.')
+        if (map[playerPosition + input] == '#')
             return;
 
         playerPosition += input;
     }
+
+    static bool CheckForWin()
+        => map[playerPosition] == 'E';
+        // => playerPosition == new Vector2(map.width - 2, map.height - 2) // Возможно быстрее
 
     #endregion
 
@@ -101,21 +118,27 @@ class Program
         }
     }
 
-    private static char[,] GenerateMap(int width, int length)
+    private static char[,] GenerateMap(int width, int height)
     {
-        char[,] map = new char[width, length];
+        char[,] map = new char[width, height];
 
-        for (int j = 0; j < length; j++)
+        Vector2 i = new();
+
+        for (i.y = 0; i.y < height; i.y++)
         {
-            for (int i = 0; i < width; i++)
+            for (i.x = 0; i.x < width; i.x++)
             {
-                if (i == 0 || j == 0 || j == length - 1 || i == width - 1)
-                    map[i, j] = '#';
-                else
-                    map[i, j] = '.';
+                if (i.x == 0 || i.y == 0 || i.y == height - 1 || i.x == width - 1)
+                {
+                    map[i.x, i.y] = '#';
+                    continue;
+                }
+
+                map[i.x, i.y] = '.';
             }
         }
 
+        map[width - 2, height - 2] = 'E';
 
         return map;
     }
@@ -132,16 +155,22 @@ class Program
         {
             for (i.x = 0; i.x < map.width; i.x++)
             {
-                if (playerPosition == i)
+                if (i == playerPosition)
+                {
                     builder.Append("@");
-                else
-                    builder.Append(map[i]);
+                    continue;
+                }
+
+                builder.Append(map[i]);
             }
 
             builder.Append("\n");
         }
 
         Console.WriteLine(builder.ToString());
+
+        if (!didntWin)
+            Console.WriteLine("\n\n\n You won! \n Press any key to play again");
     }
 
     #endregion
