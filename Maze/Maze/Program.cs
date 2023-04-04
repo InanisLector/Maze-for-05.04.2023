@@ -10,6 +10,7 @@ class Program
     private static bool didntWin;
 
     private const int maxCrossLength = 10;
+    private const bool enableDecor = true;
 
     #region Game Cycle
 
@@ -66,7 +67,7 @@ class Program
 
     static void MovePlayer(Vector2 input)
     {
-        if (map[playerPosition + input] == '#')
+        if (map[playerPosition + input] is '#' or '-' or '+' or '|')
             return;
 
         playerPosition += input;
@@ -130,16 +131,45 @@ class Program
         {
             for (i.x = 0; i.x < width; i.x++)
             {
-                if (i.x == 0 || i.y == 0 || i.y == height - 1 || i.x == width - 1) // Borders
+                if (enableDecor)
                 {
-                    map[i.x, i.y] = '#';
-                    continue;
-                }
+                    if (i.x == 0 || i.y == 0 || i.y == height - 1 || i.x == width - 1) // Borders
+                    {
+                        map[i.x, i.y] = '#';
+                        continue;
+                    }
 
-                if (i.x % 2 == 0 || i.y % 2 == 0) // Intersections
+                    if (i.x % 2 == 0 && i.y % 2 == 0) // Intersections
+                    {
+                        map[i.x, i.y] = '+';
+                        continue;
+                    }
+
+                    if (i.x % 2 == 0) // Vertical conections
+                    {
+                        map[i.x, i.y] = '|';
+                        continue;
+                    }
+
+                    if (i.y % 2 == 0) // Horizontal conections
+                    {
+                        map[i.x, i.y] = '-';
+                        continue;
+                    }
+                }
+                else
                 {
-                    map[i.x, i.y] = '#';
-                    continue;
+                    if (i.x == 0 || i.y == 0 || i.y == height - 1 || i.x == width - 1) // Borders
+                    {
+                        map[i.x, i.y] = '#';
+                        continue;
+                    }
+
+                    if (i.x % 2 == 0 || i.y % 2 == 0) // Intersections
+                    {
+                        map[i.x, i.y] = '#';
+                        continue;
+                    }
                 }
 
 
