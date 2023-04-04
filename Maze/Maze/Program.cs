@@ -164,7 +164,8 @@ class Program
         bool[,] visited = new bool[widthOfBool, heightOfBool];
         int toVisit = (widthOfBool) * (heightOfBool);
 
-        Vector2 currentPosition = new(0, 0);
+        //Vector2 currentPosition = new(0, 0);
+        Vector2 currentPosition = new(widthOfBool - 1, heightOfBool - 1);
         Stack<Vector2> path = new Stack<Vector2>();
         
         path.Append(currentPosition);
