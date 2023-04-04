@@ -147,19 +147,23 @@ class Program
             }
         }
 
-        GenerateInnerWalls(map, width, height);
+        char[,] generatedMap;
 
-        map[width - 2, height - 2] = 'E';
+        while(!GenerateInnerWalls(map, width, height, out generatedMap)) {}
 
-        return map;
+        generatedMap[width - 2, height - 2] = 'E';
+
+        return generatedMap;
     }
 
-    private static char[,] GenerateInnerWalls(char[,] map, int width, int height)
+    private static bool GenerateInnerWalls(char[,] map, int width, int height, out char[,] finishedMap)
     {
         int widthOfBool = width >> 1; // Division by 2
         int heightOfBool = height >> 1;
 
         int lastCross = 0;
+
+        finishedMap = map;
 
         bool[,] visited = new bool[widthOfBool, heightOfBool];
         int toVisit = (widthOfBool) * (heightOfBool);
@@ -171,11 +175,9 @@ class Program
         path.Append(currentPosition);
 
         Random rand = new();
-        int iter = 1;
+
         do
         {
-            Console.WriteLine($"{iter++}. {currentPosition}, {lastCross}");
-
             if (!visited[currentPosition.x, currentPosition.y])
             {
                 toVisit--;
@@ -221,6 +223,9 @@ class Program
 
                 for (int i = 0; i < crossLength; i++)
                 {
+                    if (path.Count == 0)
+                        return false;
+
                     currentPosition = path.Pop();
                 }
 
@@ -228,6 +233,9 @@ class Program
             }
             else if(availableNeighbors == 0)
             {
+                if (path.Count == 0)
+                    return false;
+
                 lastCross = 0;
                 currentPosition = path.Pop();
             }
@@ -245,7 +253,7 @@ class Program
 
         } while (toVisit > 0);
             
-        return map;
+        return true;
     }
 
     static void RenderMap()
