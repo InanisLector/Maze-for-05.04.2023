@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 
 namespace Maze;
 class Program
@@ -202,11 +202,11 @@ class Program
         Vector2 currentPosition = new(widthOfBool - 1, heightOfBool - 1);
         Stack<Vector2> path = new Stack<Vector2>();
         
-        path.Append(currentPosition);
+        path.Push(currentPosition);
 
         Random rand = new();
 
-        do
+        while (toVisit > 0)
         {
             if (!visited[currentPosition.x, currentPosition.y])
             {
@@ -281,7 +281,7 @@ class Program
                 map[addPathPosition.x, addPathPosition.y] = '.';
             }
 
-        } while (toVisit > 0);
+        }
             
         return true;
     }
@@ -329,7 +329,7 @@ class Program
 
         public static Vector2 Zero => new Vector2(0, 0);
         public static Vector2 Up => new Vector2(0, -1);
-        public static Vector2 Down=> new Vector2(0, 1);
+        public static Vector2 Down => new Vector2(0, 1);
         public static Vector2 Left => new Vector2(-1, 0);
         public static Vector2 Right => new Vector2(1, 0);
 
