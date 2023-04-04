@@ -9,6 +9,8 @@ class Program
     private static Vector2 playerPosition = new(1, 1);
     private static bool didntWin;
 
+    private const int maxCrossLength = 10;
+
     #region Game Cycle
 
     static void Main(string[] args)
@@ -21,9 +23,9 @@ class Program
             playerPosition.y = 1;
 
             map = new Map(30, 20);
-            RenderMap();
-            
             didntWin = true;
+            
+            RenderMap();
 
             while (didntWin)
                 CheckInput();
@@ -157,6 +159,8 @@ class Program
         int widthOfBool = width >> 1; // Division by 2
         int heightOfBool = height >> 1;
 
+        int lastCross = 0;
+
         bool[,] visited = new bool[widthOfBool, heightOfBool];
         int toVisit = (widthOfBool) * (heightOfBool);
 
@@ -166,11 +170,11 @@ class Program
         path.Append(currentPosition);
 
         Random rand = new();
-
-        int i = 1;
-
+        int iter = 1;
         do
         {
+            Console.WriteLine($"{iter++}. {currentPosition}, {lastCross}");
+
             if (!visited[currentPosition.x, currentPosition.y])
             {
                 toVisit--;
@@ -205,18 +209,37 @@ class Program
                     neighbors[availableNeighbors++] = currentPosition + Vector2.Right;
             }
 
-            if (availableNeighbors > 0)
+            bool makeCross = false;
+
+            if (lastCross > maxCrossLength)
+                makeCross = rand.Next(100) > 49;
+
+            if (makeCross)
             {
+                int crossLength = rand.Next(maxCrossLength);
+
+                for (int i = 0; i < crossLength; i++)
+                {
+                    currentPosition = path.Pop();
+                }
+
+                lastCross = 0;
+            }
+            else if(availableNeighbors == 0)
+            {
+                lastCross = 0;
+                currentPosition = path.Pop();
+            }
+            else
+            {
+                lastCross++;
+
                 path.Push(currentPosition);
 
                 currentPosition = neighbors[rand.Next(availableNeighbors)];
                 Vector2 addPathPosition = currentPosition + path.Peek() + new Vector2(1, 1); // Расчёты на бумаге были для координат, начиная с (1, 1)
 
                 map[addPathPosition.x, addPathPosition.y] = '.';
-            }
-            else
-            {
-                currentPosition = path.Pop();
             }
 
         } while (toVisit > 0);
