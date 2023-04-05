@@ -295,41 +295,41 @@ class Program
 
         StringBuilder builder = new StringBuilder((renderWidth + 2) * renderHeight);
 
-        Vector2 RenderStartPosition = 
+        Vector2 renderStartPosition = 
             playerPosition - new Vector2(renderWidth >> 1, renderHeight >> 1);
 
         // Below zero
 
-        RenderStartPosition.x = 
-            RenderStartPosition.x >= 0 ?
-            RenderStartPosition.x : 
+        renderStartPosition.x = 
+            renderStartPosition.x >= 0 ?
+            renderStartPosition.x : 
             0 ;
 
-        RenderStartPosition.y =
-            RenderStartPosition.y >= 0 ?
-            RenderStartPosition.y :
+        renderStartPosition.y =
+            renderStartPosition.y >= 0 ?
+            renderStartPosition.y :
             0 ;
 
         // Above limit
 
-        RenderStartPosition.x =
-            RenderStartPosition.x < map.width - renderWidth ?
-                RenderStartPosition.x :
+        renderStartPosition.x =
+            renderStartPosition.x < map.width - renderWidth ?
+                renderStartPosition.x :
                 map.width - renderWidth;
 
-        RenderStartPosition.y =
-            RenderStartPosition.y < map.height - renderHeight ?
-                RenderStartPosition.y :
+        renderStartPosition.y =
+            renderStartPosition.y < map.height - renderHeight ?
+                renderStartPosition.y :
                 map.height - renderHeight;
 
-        Vector2 RenderEndPosition =
-            RenderStartPosition + new Vector2(renderWidth, renderHeight);
+        Vector2 renderEndPosition =
+            renderStartPosition + new Vector2(renderWidth, renderHeight);
 
         Vector2 i = new();
 
-        for (i.y = RenderStartPosition.y; i.y < RenderEndPosition.y; i.y++)
+        for (i.y = renderStartPosition.y; i.y < renderEndPosition.y; i.y++)
         {
-            for (i.x = RenderStartPosition.x; i.x < RenderEndPosition.x; i.x++)
+            for (i.x = renderStartPosition.x; i.x < renderEndPosition.x; i.x++)
             {
                 if (i == playerPosition)
                 {
