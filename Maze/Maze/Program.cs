@@ -12,6 +12,9 @@ class Program
     private const int maxCrossLength = 10;
     private const bool enableDecor = true;
 
+    private const int renderWidth = 21;
+    private const int renderHeight = 15;
+
     #region Game Cycle
 
     static void Main(string[] args)
@@ -23,10 +26,10 @@ class Program
             playerPosition.x = 1;
             playerPosition.y = 1;
 
-            map = new Map(30, 20);
+            map = new Map(31, 21);
             didntWin = true;
             
-            RenderMap();
+            RenderScaledMap();
 
             while (didntWin)
                 CheckInput();
@@ -39,7 +42,7 @@ class Program
     {
         MovePlayer(input);
         didntWin = !CheckForWin();
-        RenderMap();
+        RenderScaledMap();
     }
 
     #endregion
@@ -194,7 +197,7 @@ class Program
         int lastCross = 0;
 
         finishedMap = map;
-
+        
         bool[,] visited = new bool[widthOfBool, heightOfBool];
         int toVisit = (widthOfBool) * (heightOfBool);
 
@@ -285,18 +288,48 @@ class Program
             
         return true;
     }
-
-    static void RenderMap()
+    
+    static void RenderScaledMap()
     {
         Console.Clear();
 
-        StringBuilder builder = new StringBuilder((map.width + 2) * map.height); // +2 is For \n
+        StringBuilder builder = new StringBuilder((renderWidth + 2) * renderHeight);
 
-        Vector2 i = new(); // 0, 0 - base value
+        Vector2 RenderStartPosition = 
+            playerPosition - new Vector2(renderWidth >> 1, renderHeight >> 1);
 
-        for (i.y = 0; i.y < map.height; i.y++)
+        // Below zero
+
+        RenderStartPosition.x = 
+            RenderStartPosition.x >= 0 ?
+            RenderStartPosition.x : 
+            0 ;
+
+        RenderStartPosition.y =
+            RenderStartPosition.y >= 0 ?
+            RenderStartPosition.y :
+            0 ;
+
+        // Above limit
+
+        RenderStartPosition.x =
+            RenderStartPosition.x < map.width - renderWidth ?
+                RenderStartPosition.x :
+                map.width - renderWidth;
+
+        RenderStartPosition.y =
+            RenderStartPosition.y < map.height - renderHeight ?
+                RenderStartPosition.y :
+                map.height - renderHeight;
+
+        Vector2 RenderEndPosition =
+            RenderStartPosition + new Vector2(renderWidth, renderHeight);
+
+        Vector2 i = new();
+
+        for (i.y = RenderStartPosition.y; i.y < RenderEndPosition.y; i.y++)
         {
-            for (i.x = 0; i.x < map.width; i.x++)
+            for (i.x = RenderStartPosition.x; i.x < RenderEndPosition.x; i.x++)
             {
                 if (i == playerPosition)
                 {
