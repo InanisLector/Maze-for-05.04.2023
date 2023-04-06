@@ -60,11 +60,7 @@ class Program
 
         try
         {
-            var wh = s.Split(" ").Select(x =>
-            {
-                int.TryParse(x, out int result);
-                return result;
-            }).ToArray();
+            var wh = s.Split(" ").Select(x => int.Parse(x)).ToArray();
 
             mazeWidth = wh[0];
             mazeHeight = wh[1];
@@ -77,11 +73,7 @@ class Program
 
         try
         {
-            var wh = s.Split(" ").Select(x =>
-            {
-                int.TryParse(x, out int result);
-                return result;
-            }).ToArray();
+            var wh = s.Split(" ").Select(x => int.Parse(x)).ToArray();
 
             renderWidth = 
                 wh[0] < mazeWidth ?
