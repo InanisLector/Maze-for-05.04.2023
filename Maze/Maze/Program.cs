@@ -10,10 +10,15 @@ class Program
     private static bool didntWin;
 
     private const int maxCrossLength = 10;
-    private const bool enableDecor = true;
+    private const bool enableDecor = false;
 
-    private const int renderWidth = 21;
-    private const int renderHeight = 15;
+    private static int mazeWidth = 31;
+    private static int mazeHeight = 21;
+
+    private static int renderWidth = 21;
+    private static int renderHeight = 15;
+
+    private HashCode seed;
 
     #region Game Cycle
 
@@ -23,10 +28,12 @@ class Program
 
         while (true)
         {
+            QuizMenu();
+
             playerPosition.x = 1;
             playerPosition.y = 1;
 
-            map = new Map(31, 21);
+            map = new Map(mazeWidth, mazeHeight);
             didntWin = true;
             
             RenderScaledMap();
@@ -43,6 +50,50 @@ class Program
         MovePlayer(input);
         didntWin = !CheckForWin();
         RenderScaledMap();
+    }
+
+    static void QuizMenu()
+    {
+        Console.WriteLine("What is your preferable maze size\nInput like 31 21\nIf you don't want it, just press Enter. It will just generate automatically or take you previous settings");
+
+        string s = Console.ReadLine();
+
+        try
+        {
+            var wh = s.Split(" ").Select(x =>
+            {
+                int.TryParse(x, out int result);
+                return result;
+            }).ToArray();
+
+            mazeWidth = wh[0];
+            mazeHeight = wh[1];
+        }
+        catch { }
+
+        Console.WriteLine("What is your preferable render distance\nInput like 21 15\nIf you don't want it, just press Enter. It will just generate automatically or take you previous settings");
+
+        s = Console.ReadLine();
+
+        try
+        {
+            var wh = s.Split(" ").Select(x =>
+            {
+                int.TryParse(x, out int result);
+                return result;
+            }).ToArray();
+
+            renderWidth = 
+                wh[0] < mazeWidth ?
+                    wh[0] :
+                    mazeWidth + 1 ;
+            renderHeight = 
+                wh[1] < mazeHeight ?
+                    wh[1] :
+                    mazeHeight + 1;
+        }
+        catch { }
+
     }
 
     #endregion
