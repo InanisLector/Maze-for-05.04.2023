@@ -3,56 +3,72 @@ using System.Text;
 namespace Maze;
 class Program
 {
-    private static Map map ;
-    private static Action<Vector2>? inputCycle;
+    static void Main(string[] args)
+    {
+        Game maze = new();
+        maze.Start();
+    }
+}
 
-    private static Vector2 playerPosition = new(1, 1);
-    private static bool didntWin;
+public class Game
+{
+    private Map map;
+    private Action<Vector2>? inputCycle;
 
-    private const int maxCrossLength = 10;
-    private const bool enableDecor = false;
+    private Vector2 playerPosition = new(1, 1);
+    private bool didntWin;
 
-    private static int mazeWidth = 31;
-    private static int mazeHeight = 21;
+    private int mazeWidth = 31;
+    private int mazeHeight = 21;
 
-    private static int renderWidth = 21;
-    private static int renderHeight = 15;
+    private int renderWidth = 21;
+    private int renderHeight = 15;
+
+    private bool somethingChanged;
 
     private HashCode seed;
 
     #region Game Cycle
 
-    static void Main(string[] args)
+    public void Start()
     {
-        inputCycle += GameCycle;
-
         while (true)
         {
             QuizMenu();
+            GameInit();
 
-            playerPosition.x = 1;
-            playerPosition.y = 1;
-
-            map = new Map(mazeWidth, mazeHeight);
-            didntWin = true;
-            
-            RenderScaledMap();
-
-            while (didntWin)
-                CheckInput();
+            GameCycle();
 
             Console.ReadKey(true);
         }
     }
 
-    static void GameCycle(Vector2 input)
+    private void GameInit()
     {
-        MovePlayer(input);
-        didntWin = !CheckForWin();
-        RenderScaledMap();
+        playerPosition.x = 1;
+        playerPosition.y = 1;
+
+        map = new Map(mazeWidth, mazeHeight);
+        map.GenerateMap(); // Я просто не хотел чтобы Generate map можно было вызвать откуда угодно. Если есть способ получше - скажите
+        
+        didntWin = true;
     }
 
-    static void QuizMenu()
+    private void GameCycle()
+    {
+        while (didntWin)
+        {
+            somethingChanged = false;
+
+            Vector2 input = GetInput();
+            MovePlayer(input);
+
+            didntWin = !CheckForWin();
+            RenderScaledMap();
+        }
+    }
+
+    private void QuizMenu()
     {
         Console.WriteLine("What is your preferable maze size\nInput like 31 21\nIf you don't want it, just press Enter. It will just generate automatically or take you previous settings");
 
@@ -75,11 +91,11 @@ class Program
         {
             var wh = s.Split(" ").Select(x => int.Parse(x)).ToArray();
 
-            renderWidth = 
+            renderWidth =
                 wh[0] < mazeWidth ?
                     wh[0] :
-                    mazeWidth + 1 ;
-            renderHeight = 
+                    mazeWidth + 1;
+            renderHeight =
                 wh[1] < mazeHeight ?
                     wh[1] :
                     mazeHeight + 1;
@@ -92,26 +108,29 @@ class Program
 
     #region Player controls
 
-    static void CheckInput()
+    private Vector2 GetInput()
     {
+        if (Console.KeyAvailable)
+            return Vector2.Zero;
+
         Vector2 input = Console.ReadKey(true)
                 .Key switch
-            {
-                ConsoleKey.W => Vector2.Up,
-                ConsoleKey.UpArrow => Vector2.Up,
-                ConsoleKey.A => Vector2.Left,
-                ConsoleKey.LeftArrow => Vector2.Left,
-                ConsoleKey.S => Vector2.Down,
-                ConsoleKey.DownArrow => Vector2.Down,
-                ConsoleKey.D => Vector2.Right,
-                ConsoleKey.RightArrow => Vector2.Right,
-                _ => Vector2.Zero
-            };
+        {
+            ConsoleKey.W => Vector2.Up,
+            ConsoleKey.UpArrow => Vector2.Up,
+            ConsoleKey.A => Vector2.Left,
+            ConsoleKey.LeftArrow => Vector2.Left,
+            ConsoleKey.S => Vector2.Down,
+            ConsoleKey.DownArrow => Vector2.Down,
+            ConsoleKey.D => Vector2.Right,
+            ConsoleKey.RightArrow => Vector2.Right,
+            _ => Vector2.Zero
+        };
 
-        inputCycle?.Invoke(input);
+        return input;
     }
 
-    static void MovePlayer(Vector2 input)
+    private void MovePlayer(Vector2 input)
     {
         if (map[playerPosition + input] is '#' or '-' or '+' or '|')
             return;
@@ -119,9 +138,9 @@ class Program
         playerPosition += input;
     }
 
-    static bool CheckForWin()
+    private bool CheckForWin()
         => map[playerPosition] == 'E';
-        // => playerPosition == new Vector2(map.width - 2, map.height - 2) // Возможно быстрее
+    // => playerPosition == new Vector2(map.width - 2, map.height - 2) // Возможно быстрее
 
     #endregion
 
@@ -129,10 +148,14 @@ class Program
 
     struct Map
     {
+        const bool enableDecor = false;
+
         public readonly int width;
         public readonly int height;
 
-        private readonly char[,] _map;
+        private char[,] _map;
+
+        private int maxCrossLength = 10;
 
         public Map(int width, int height)
         {
@@ -145,7 +168,172 @@ class Program
             this.width = width;
             this.height = height;
 
-            _map = GenerateMap(width, height);
+            _map = new char[width, height];
+        }
+
+        public void GenerateMap()
+        {
+            char[,] map = new char[width, height];
+
+            Vector2 i = new();
+
+            for (i.y = 0; i.y < height; i.y++)
+            {
+                for (i.x = 0; i.x < width; i.x++)
+                {
+                    if (enableDecor)
+                    {
+                        if (i.x == 0 || i.y == 0 || i.y == height - 1 || i.x == width - 1) // Borders
+                        {
+                            map[i.x, i.y] = '#';
+                            continue;
+                        }
+
+                        if (i.x % 2 == 0 && i.y % 2 == 0) // Intersections
+                        {
+                            map[i.x, i.y] = '+';
+                            continue;
+                        }
+
+                        if (i.x % 2 == 0) // Vertical conections
+                        {
+                            map[i.x, i.y] = '|';
+                            continue;
+                        }
+
+                        if (i.y % 2 == 0) // Horizontal conections
+                        {
+                            map[i.x, i.y] = '-';
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        if (i.x == 0 || i.y == 0 || i.y == height - 1 || i.x == width - 1) // Borders
+                        {
+                            map[i.x, i.y] = '#';
+                            continue;
+                        }
+
+                        if (i.x % 2 == 0 || i.y % 2 == 0) // Intersections
+                        {
+                            map[i.x, i.y] = '#';
+                            continue;
+                        }
+                    }
+
+
+                    map[i.x, i.y] = '.';
+                }
+            }
+
+            char[,] generatedMap;
+
+            while (!GenerateInnerWalls(map, width, height, out generatedMap)) { }
+
+            generatedMap[width - 2, height - 2] = 'E';
+
+            _map = generatedMap;
+        }
+
+        private bool GenerateInnerWalls(char[,] map, int width, int height, out char[,] finishedMap)
+        {
+            int widthOfBool = width >> 1; // Division by 2
+            int heightOfBool = height >> 1;
+
+            int lastCross = 0;
+
+            finishedMap = map;
+
+            bool[,] visited = new bool[widthOfBool, heightOfBool];
+            int toVisit = (widthOfBool) * (heightOfBool);
+
+            //Vector2 currentPosition = new(0, 0);
+            Vector2 currentPosition = new(widthOfBool - 1, heightOfBool - 1);
+            Stack<Vector2> path = new Stack<Vector2>();
+
+            path.Push(currentPosition);
+
+            Random rand = new();
+
+            while (toVisit > 0)
+            {
+                if (!visited[currentPosition.x, currentPosition.y])
+                {
+                    toVisit--;
+                    visited[currentPosition.x, currentPosition.y] = true;
+                }
+
+                var neighbors = new Vector2[4];
+                int availableNeighbors = 0;
+
+                if (currentPosition.y > 0)
+                {
+                    (int x, int y) = (currentPosition + Vector2.Up);
+                    if (!visited[x, y])
+                        neighbors[availableNeighbors++] = currentPosition + Vector2.Up;
+                }
+                if (currentPosition.y < heightOfBool - 1)
+                {
+                    (int x, int y) = (currentPosition + Vector2.Down);
+                    if (!visited[x, y])
+                        neighbors[availableNeighbors++] = currentPosition + Vector2.Down;
+                }
+                if (currentPosition.x > 0)
+                {
+                    (int x, int y) = (currentPosition + Vector2.Left);
+                    if (!visited[x, y])
+                        neighbors[availableNeighbors++] = currentPosition + Vector2.Left;
+                }
+                if (currentPosition.x < widthOfBool - 1)
+                {
+                    (int x, int y) = (currentPosition + Vector2.Right);
+                    if (!visited[x, y])
+                        neighbors[availableNeighbors++] = currentPosition + Vector2.Right;
+                }
+
+                bool makeCross = false;
+
+                if (lastCross > maxCrossLength)
+                    makeCross = rand.Next(100) > 49;
+
+                if (makeCross)
+                {
+                    int crossLength = rand.Next(maxCrossLength);
+
+                    for (int i = 0; i < crossLength; i++)
+                    {
+                        if (path.Count == 0)
+                            return false;
+
+                        currentPosition = path.Pop();
+                    }
+
+                    lastCross = 0;
+                }
+                else if (availableNeighbors == 0)
+                {
+                    if (path.Count == 0)
+                        return false;
+
+                    lastCross = 0;
+                    currentPosition = path.Pop();
+                }
+                else
+                {
+                    lastCross++;
+
+                    path.Push(currentPosition);
+
+                    currentPosition = neighbors[rand.Next(availableNeighbors)];
+                    Vector2 addPathPosition = currentPosition + path.Peek() + new Vector2(1, 1); // Расчёты на бумаге были для координат, начиная с (1, 1)
+
+                    map[addPathPosition.x, addPathPosition.y] = '.';
+                }
+
+            }
+
+            return true;
         }
 
         public char this[Vector2 vector]
@@ -167,191 +355,26 @@ class Program
         }
     }
 
-    private static char[,] GenerateMap(int width, int height)
-    {
-        char[,] map = new char[width, height];
-
-        Vector2 i = new();
-
-        for (i.y = 0; i.y < height; i.y++)
-        {
-            for (i.x = 0; i.x < width; i.x++)
-            {
-                if (enableDecor)
-                {
-                    if (i.x == 0 || i.y == 0 || i.y == height - 1 || i.x == width - 1) // Borders
-                    {
-                        map[i.x, i.y] = '#';
-                        continue;
-                    }
-
-                    if (i.x % 2 == 0 && i.y % 2 == 0) // Intersections
-                    {
-                        map[i.x, i.y] = '+';
-                        continue;
-                    }
-
-                    if (i.x % 2 == 0) // Vertical conections
-                    {
-                        map[i.x, i.y] = '|';
-                        continue;
-                    }
-
-                    if (i.y % 2 == 0) // Horizontal conections
-                    {
-                        map[i.x, i.y] = '-';
-                        continue;
-                    }
-                }
-                else
-                {
-                    if (i.x == 0 || i.y == 0 || i.y == height - 1 || i.x == width - 1) // Borders
-                    {
-                        map[i.x, i.y] = '#';
-                        continue;
-                    }
-
-                    if (i.x % 2 == 0 || i.y % 2 == 0) // Intersections
-                    {
-                        map[i.x, i.y] = '#';
-                        continue;
-                    }
-                }
-
-
-                map[i.x, i.y] = '.';
-            }
-        }
-
-        char[,] generatedMap;
-
-        while(!GenerateInnerWalls(map, width, height, out generatedMap)) {}
-
-        generatedMap[width - 2, height - 2] = 'E';
-
-        return generatedMap;
-    }
-
-    private static bool GenerateInnerWalls(char[,] map, int width, int height, out char[,] finishedMap)
-    {
-        int widthOfBool = width >> 1; // Division by 2
-        int heightOfBool = height >> 1;
-
-        int lastCross = 0;
-
-        finishedMap = map;
-        
-        bool[,] visited = new bool[widthOfBool, heightOfBool];
-        int toVisit = (widthOfBool) * (heightOfBool);
-
-        //Vector2 currentPosition = new(0, 0);
-        Vector2 currentPosition = new(widthOfBool - 1, heightOfBool - 1);
-        Stack<Vector2> path = new Stack<Vector2>();
-        
-        path.Push(currentPosition);
-
-        Random rand = new();
-
-        while (toVisit > 0)
-        {
-            if (!visited[currentPosition.x, currentPosition.y])
-            {
-                toVisit--;
-                visited[currentPosition.x, currentPosition.y] = true;
-            }
-
-            var neighbors = new Vector2[4];
-            int availableNeighbors = 0;
-
-            if (currentPosition.y > 0)
-            {
-                (int x, int y) = (currentPosition + Vector2.Up);
-                if (!visited[x, y])
-                    neighbors[availableNeighbors++] = currentPosition + Vector2.Up;
-            }
-            if(currentPosition.y < heightOfBool - 1)
-            {
-                (int x, int y) = (currentPosition + Vector2.Down);
-                if (!visited[x, y])
-                    neighbors[availableNeighbors++] = currentPosition + Vector2.Down;
-            }
-            if (currentPosition.x > 0)
-            {
-                (int x, int y) = (currentPosition + Vector2.Left);
-                if (!visited[x, y])
-                    neighbors[availableNeighbors++] = currentPosition + Vector2.Left;
-            }
-            if (currentPosition.x < widthOfBool - 1)
-            {
-                (int x, int y) = (currentPosition + Vector2.Right);
-                if (!visited[x, y])
-                    neighbors[availableNeighbors++] = currentPosition + Vector2.Right;
-            }
-
-            bool makeCross = false;
-
-            if (lastCross > maxCrossLength)
-                makeCross = rand.Next(100) > 49;
-
-            if (makeCross)
-            {
-                int crossLength = rand.Next(maxCrossLength);
-
-                for (int i = 0; i < crossLength; i++)
-                {
-                    if (path.Count == 0)
-                        return false;
-
-                    currentPosition = path.Pop();
-                }
-
-                lastCross = 0;
-            }
-            else if(availableNeighbors == 0)
-            {
-                if (path.Count == 0)
-                    return false;
-
-                lastCross = 0;
-                currentPosition = path.Pop();
-            }
-            else
-            {
-                lastCross++;
-
-                path.Push(currentPosition);
-
-                currentPosition = neighbors[rand.Next(availableNeighbors)];
-                Vector2 addPathPosition = currentPosition + path.Peek() + new Vector2(1, 1); // Расчёты на бумаге были для координат, начиная с (1, 1)
-
-                map[addPathPosition.x, addPathPosition.y] = '.';
-            }
-
-        }
-            
-        return true;
-    }
-    
-    static void RenderScaledMap()
+    private void RenderScaledMap()
     {
         Console.Clear();
 
         StringBuilder builder = new StringBuilder((renderWidth + 2) * renderHeight);
 
-        Vector2 renderStartPosition = 
+        Vector2 renderStartPosition =
             playerPosition - new Vector2(renderWidth >> 1, renderHeight >> 1);
 
         // Below zero
 
-        renderStartPosition.x = 
+        renderStartPosition.x =
             renderStartPosition.x >= 0 ?
-            renderStartPosition.x : 
-            0 ;
+            renderStartPosition.x :
+            0;
 
         renderStartPosition.y =
             renderStartPosition.y >= 0 ?
             renderStartPosition.y :
-            0 ;
+            0;
 
         // Above limit
 
